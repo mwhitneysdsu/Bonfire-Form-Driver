@@ -27,21 +27,17 @@
 class Bootstrap_2_3_2 extends Form
 {
 	/**
-	 * Stores the template that inputs are wrapped in.
+	 * Stores the custom inputs that we provide.
 	 *
 	 * @access protected
 	 * @static
 	 *
-	 * @var string
+	 * @var array
 	 */
-	protected static $template = '
-<div class="control-group{error_class}">
-	{label}
-	<div class="controls">
-		{input}
-		<span class="help-inline">{help}</span>
-	</div>
-</div>';
+	protected static $custom_inputs = array(
+		'state'		=> 'state_select',
+		'country'	=> 'country_select'
+	);
 
 	/**
 	 * Stores the standard HTML5 inputs.
@@ -59,23 +55,26 @@ class Bootstrap_2_3_2 extends Form
 	);
 
 	/**
-	 * Stores the custom inputs that we provide.
+	 * Stores the template that inputs are wrapped in.
 	 *
 	 * @access protected
 	 * @static
 	 *
-	 * @var array
+	 * @var string
 	 */
-	protected static $custom_inputs = array(
-		'state'		=> 'state_select',
-		'country'	=> 'country_select'
-	);
+	protected static $template = '
+<div class="control-group{error_class}">
+	{label}
+	<div class="controls">
+		{input}
+		<span class="help-inline">{help}</span>
+	</div>
+</div>';
 
 	/**
-	 * Constructor calls the init method
+	 * Constructor
 	 *
 	 * @access public
-	 * @uses   init()
 	 *
 	 * @return void
 	 */
@@ -161,6 +160,69 @@ class Bootstrap_2_3_2 extends Form
 	}
 
     /**
+     * Utilized by BF_form_helper's _form_common function
+     *
+     * @param Array $helperArgs An array containing the _form_common function's arguments, currently supports 'type', 'data', 'value', 'label', 'extra', and 'tooltip'
+     *
+     * @return String    The HTML for the input
+     */
+    public static function form_helper_common($helperArgs=array())
+    {
+        $type       = isset($helperArgs['type']) ? $helperArgs['type'] : 'text';
+        $data       = isset($helperArgs['data']) ? $helperArgs['data'] : '';
+        $value      = isset($helperArgs['value']) ? $helperArgs['value'] : '';
+        $label      = isset($helperArgs['label']) ? $helperArgs['label'] : '';
+        $extra      = isset($helperArgs['extra']) ? $helperArgs['extra'] : '';
+        $tooltip    = isset($helperArgs['tooltip']) ? $helperArgs['tooltip'] : '';
+
+        $defaults = array('type' => $type, 'name' => (( ! is_array($data)) ? $data : ''), 'value' => $value);
+
+		// If name is empty at this point, try to grab it from the $data array
+		if (empty($defaults['name']) && is_array($data) && isset($data['name'])) {
+			$defaults['name'] = $data['name'];
+			unset($data['name']);
+		}
+
+		// If label is empty at this point, try to grab it from the $data array
+		if (empty($label) && is_array($data) && isset($data['label'])) {
+			$label = $data['label'];
+			unset($data['label']);
+		}
+
+		// If tooltip is empty at this point, try to grab it from the $data array
+		if (empty($tooltip) && is_array($data) && isset($data['tooltip'])) {
+			$tooltip = $data['tooltip'];
+			unset($data['tooltip']);
+		}
+
+		$error = '';
+
+		if (function_exists('form_error')) {
+			if (form_error($defaults['name'])) {
+				$error   = ' error';
+				$tooltip = form_error($data['name']) . '<br />' . $tooltip;
+			}
+		}
+
+		$output = _parse_form_attributes($data, $defaults);
+
+        $search = array(
+            '{label}',
+            '{input}',
+            '{help}',
+            '{error_class}',
+        );
+        $replace = array(
+            self::label($label, array('for' => $defaults['name'], 'class' => 'control-label')),
+            "<input {$output} {$extra} />",
+            $tooltip,
+            $error,
+        );
+
+		return str_replace($search, $replace, self::$template);
+    }
+
+    /**
      * Utilized by BF_form_helper to create a dropdown
      *
      * @param Array $helperArgs Array of arguments from the helper's form_dropdown function, currently supports 'data', 'options', 'selected', 'label', 'extra', and 'tooltip'
@@ -242,93 +304,6 @@ class Bootstrap_2_3_2 extends Form
 		return str_replace($search, $replace, self::$template);
     }
 
-    /**
-     * Utilized by BF_form_helper's _form_common function
-     *
-     * @param Array $helperArgs An array containing the _form_common function's arguments, currently supports 'type', 'data', 'value', 'label', 'extra', and 'tooltip'
-     *
-     * @return String    The HTML for the input
-     */
-    public static function form_helper_common($helperArgs=array())
-    {
-        $type       = isset($helperArgs['type']) ? $helperArgs['type'] : 'text';
-        $data       = isset($helperArgs['data']) ? $helperArgs['data'] : '';
-        $value      = isset($helperArgs['value']) ? $helperArgs['value'] : '';
-        $label      = isset($helperArgs['label']) ? $helperArgs['label'] : '';
-        $extra      = isset($helperArgs['extra']) ? $helperArgs['extra'] : '';
-        $tooltip    = isset($helperArgs['tooltip']) ? $helperArgs['tooltip'] : '';
-
-        $defaults = array('type' => $type, 'name' => (( ! is_array($data)) ? $data : ''), 'value' => $value);
-
-		// If name is empty at this point, try to grab it from the $data array
-		if (empty($defaults['name']) && is_array($data) && isset($data['name'])) {
-			$defaults['name'] = $data['name'];
-			unset($data['name']);
-		}
-
-		// If label is empty at this point, try to grab it from the $data array
-		if (empty($label) && is_array($data) && isset($data['label'])) {
-			$label = $data['label'];
-			unset($data['label']);
-		}
-
-		// If tooltip is empty at this point, try to grab it from the $data array
-		if (empty($tooltip) && is_array($data) && isset($data['tooltip'])) {
-			$tooltip = $data['tooltip'];
-			unset($data['tooltip']);
-		}
-
-		$error = '';
-
-		if (function_exists('form_error')) {
-			if (form_error($defaults['name'])) {
-				$error   = ' error';
-				$tooltip = form_error($data['name']) . '<br />' . $tooltip;
-			}
-		}
-
-		$output = _parse_form_attributes($data, $defaults);
-
-        $search = array(
-            '{label}',
-            '{input}',
-            '{help}',
-            '{error_class}',
-        );
-        $replace = array(
-            self::label($label, array('for' => $defaults['name'], 'class' => 'control-label')),
-            "<input {$output} {$extra} />",
-            $tooltip,
-            $error,
-        );
-
-		return str_replace($search, $replace, self::$template);
-    }
-
-    /**
-	 * Generates a <label> tag.
-	 *
-	 * @access public
-	 * @static
-	 *
-	 * @param string $value   The displayed text of the label.
-	 * @param mixed  $options The value to be applied to the 'for' attribute of the tag, or an array of properties.
-	 *
-	 * @return string HTML for the field label
-	 */
-	public static function label($value, $options=null)
-	{
-		if ($options === null) {
-			return "<label>{$value}</label>";
-		}
-
-        if (is_string($options)) {
-            return "<label for='{$options}'>{$value}</label>";
-        }
-
-        return '<label ' . self::attr_to_string($options) . ">{$value}</label>";
-	}
-
 	/**
 	 * Generates a generic <input> tag.
 	 *
@@ -355,6 +330,86 @@ class Bootstrap_2_3_2 extends Form
 		$input = '<input ' . self::attr_to_string($options) . ' />';
 
 		return $input;
+	}
+
+    /**
+	 * Generates a <label> tag.
+	 *
+	 * @access public
+	 * @static
+	 *
+	 * @param string $value   The displayed text of the label.
+	 * @param mixed  $options The value to be applied to the 'for' attribute of the tag, or an array of properties.
+	 *
+	 * @return string HTML for the field label
+	 */
+	public static function label($value, $options=null)
+	{
+		if ($options === null) {
+			return "<label>{$value}</label>";
+		}
+
+        if (is_string($options)) {
+            return "<label for='{$options}'>{$value}</label>";
+        }
+
+        return '<label ' . self::attr_to_string($options) . ">{$value}</label>";
+	}
+
+	/**
+	 * Address State field
+	 *
+	 * @access public
+	 * @static
+	 *
+	 * @param array $options An array of options to be applied as attributes.
+	 * @param bool  $extended If true, return a templated state dropdown with label, help text, etc., else return just a state dropdown.
+	 *
+	 * @return string HTML for the State dropdown field
+	 */
+	public static function state($options, $extended=false)
+	{
+		if ( ! function_exists('state_select')) {
+			self::$ci->load->helper('address');
+		}
+
+		$selected	= isset($options['value']) ? $options['value'] : '';
+		$default	= isset($options['default']) ? $options['default'] : '';
+		$country	= 'US';
+		$name		= isset($options['name']) ? $options['name'] : '';
+		$class		= isset($options['class']) ? $options['class'] : '';
+
+		$input = state_select($selected, $default, $country, $name, $class);
+
+        if ($extended !== true) {
+            return $input;
+        }
+
+        $tooltip = isset($options['tooltip']) ? $options['tooltip'] : '';
+        $label = isset($options['label']) ? $options['label'] : '';
+        $error = '';
+
+        if ( ! empty($name) && function_exists('form_error')) {
+            if (form_error($name)) {
+                $error = ' error';
+                $tooltip = form_error($name) . '<br />' . $tooltip;
+            }
+        }
+
+        $search = array(
+            '{label}',
+            '{input}',
+            '{help}',
+            '{error_class}',
+        );
+        $replace = array(
+            self::label($label, array('for' => $name, 'class' => 'control-label')),
+            $input,
+            $tooltip,
+            $error,
+        );
+
+		return str_replace($search, $replace, self::$template);
 	}
 
 	/**
@@ -407,67 +462,6 @@ class Bootstrap_2_3_2 extends Form
         } elseif (isset($options['id'])) {
             $name = $options['id'];
         }
-
-        if ( ! empty($name) && function_exists('form_error')) {
-            if (form_error($name)) {
-                $error = ' error';
-                $tooltip = form_error($name) . '<br />' . $tooltip;
-            }
-        }
-
-        $search = array(
-            '{label}',
-            '{input}',
-            '{help}',
-            '{error_class}',
-        );
-        $replace = array(
-            self::label($label, array('for' => $name, 'class' => 'control-label')),
-            $input,
-            $tooltip,
-            $error,
-        );
-
-		return str_replace($search, $replace, self::$template);
-	}
-
-	/**
-	 * Address State field
-	 *
-	 * @access public
-	 * @static
-	 *
-	 * @param array $options An array of options to be applied as attributes.
-	 * @param bool  $extended If true, return a templated state dropdown with label, help text, etc., else return just a state dropdown.
-	 *
-	 * @return string HTML for the State dropdown field
-	 */
-	public static function state($options, $extended=false)
-	{
-		if ( ! function_exists('state_select')) {
-			self::$ci->load->helper('address');
-		}
-
-		$selected	= isset($options['value']) ? $options['value'] : '';
-		$default	= isset($options['default']) ? $options['default'] : '';
-		$country	= 'US';
-		$name		= isset($options['name']) ? $options['name'] : '';
-		$class		= isset($options['class']) ? $options['class'] : '';
-
-		$input = state_select($selected, $default, $country, $name, $class);
-
-		/*
-		 * @TODO Is this required?  Is this file even used anymore?
-		 */
-		print_r($options);
-
-        if ($extended !== true) {
-            return $input;
-        }
-
-        $tooltip = isset($options['tooltip']) ? $options['tooltip'] : '';
-        $label = isset($options['label']) ? $options['label'] : '';
-        $error = '';
 
         if ( ! empty($name) && function_exists('form_error')) {
             if (form_error($name)) {

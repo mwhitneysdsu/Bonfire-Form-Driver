@@ -70,15 +70,7 @@ class Form
 	 *
 	 * @var string
 	 */
-	protected static $template = '<div class="clearfix">
-	{label}
-	<div class="input {error_class}">
-		{input}
-		<span class="inline-help">{help}</span>
-		<span class="inline-help error">{error}</span>
-	</div>
-</div>';
-
+	protected static $template;
 
 	/**
 	 * Stores the standard HTML5 inputs.
@@ -86,15 +78,9 @@ class Form
 	 * @access protected
 	 * @static
 	 *
-	 * @var string
+	 * @var array
 	 */
-	protected static $standard_inputs = array(
-		'button', 'checkbox', 'color', 'date', 'datetime', 'datetime-local',
-		'email', 'file', 'hidden', 'image', 'month', 'number', 'password',
-		'radio', 'range', 'reset', 'search', 'submit', 'tel', 'text', 'time',
-		'url', 'week'
-	);
-
+	protected static $standard_inputs;
 
 	/**
 	 * Stores the custom inputs that we provide.
@@ -104,10 +90,7 @@ class Form
 	 *
 	 * @var array
 	 */
-	protected static $custom_inputs = array(
-		'state'		=> 'state_select',
-		'country'	=> 'country_select'
-	);
+	protected static $custom_inputs;
 
     /**
      * @var String Fallback driver in case the config variable 'form.driver'
@@ -130,10 +113,9 @@ class Form
 	//--------------------------------------------------------------------
 
 	/**
-	 * Constructor calls the init method
+	 * Constructor
 	 *
 	 * @access public
-	 * @uses   init()
 	 *
 	 * @return void
 	 */
@@ -141,6 +123,21 @@ class Form
 	{
 		self::$ci =& get_instance();
 
+        self::init($params);
+	}//end __construct()
+
+	//--------------------------------------------------------------------
+
+    /**
+     * Load the config items, if available, and load the driver
+     *
+     * @access public
+     * @static
+     *
+     * @return void
+     */
+    public static function init($params=array())
+    {
         $defaults = array();
         $defaults['form_driver'] = self::$ci->config->item('form.driver') ? strtolower(self::$ci->config->item('form.driver')) : self::$fallback_driver;
         $defaults['form_driver_location'] = self::$ci->config->item('form.driver_location') ? ucwords(self::$ci->config->item('form.driver_location')) : self::$fallback_driver_location;
@@ -158,21 +155,7 @@ class Form
         self::$ci->load->library(self::$path . '/' . self::$driver);
         self::$form =& self::$ci->{self::$driver};
 
-        log_message('debug', 'Form Class Initialized and loaded. Driver used: ' . self::$path . '/' . self::$driver);
-	}//end __construct()
-
-	//--------------------------------------------------------------------
-
-    /**
-     * Utilized by BF_form_helper to create a dropdown
-     *
-     * @param Array $helperArgs Array of arguments from the helper's form_dropdown function, currently supports 'data', 'options', 'selected', 'label', 'extra', and 'tooltip'
-     *
-     * @return String    The HTML for the dropdown
-     */
-    public static function form_helper_dropdown($helperArgs)
-    {
-        return self::$form->form_helper_dropdown($helperArgs);
+        log_message('debug', 'Form library loaded. Driver used: ' . self::$path . '/' . self::$driver);
     }
 
 	//--------------------------------------------------------------------
@@ -187,6 +170,20 @@ class Form
     public static function form_helper_common($helperArgs=array())
     {
         return self::$form->form_helper_common($helperArgs);
+    }
+
+	//--------------------------------------------------------------------
+
+    /**
+     * Utilized by BF_form_helper to create a dropdown
+     *
+     * @param Array $helperArgs Array of arguments from the helper's form_dropdown function, currently supports 'data', 'options', 'selected', 'label', 'extra', and 'tooltip'
+     *
+     * @return String    The HTML for the dropdown
+     */
+    public static function form_helper_dropdown($helperArgs)
+    {
+        return self::$form->form_helper_dropdown($helperArgs);
     }
 
 	//--------------------------------------------------------------------

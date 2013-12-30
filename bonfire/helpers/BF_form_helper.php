@@ -379,7 +379,7 @@ if ( ! function_exists('form_dropdown'))
       	$CI =& get_instance();
 		$CI->load->library('form');
 
-        return $CI->form->form_dropdown($funcArgs);
+        return $CI->form->form_helper_dropdown($funcArgs);
 
 	}//end form_dropdown()
 }

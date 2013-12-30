@@ -163,13 +163,27 @@ class Form
 
 	//--------------------------------------------------------------------
 
-    public static function form_dropdown($helperArgs)
+    /**
+     * Utilized by BF_form_helper to create a dropdown
+     *
+     * @param Array $helperArgs Array of arguments from the helper's form_dropdown function, currently supports 'data', 'options', 'selected', 'label', 'extra', and 'tooltip'
+     *
+     * @return String    The HTML for the dropdown
+     */
+    public static function form_helper_dropdown($helperArgs)
     {
-        return self::$form->form_dropdown($helperArgs);
+        return self::$form->form_helper_dropdown($helperArgs);
     }
 
 	//--------------------------------------------------------------------
 
+    /**
+     * Utilized by BF_form_helper's _form_common function
+     *
+     * @param Array $helperArgs An array containing the _form_common function's arguments, currently supports 'type', 'data', 'value', 'label', 'extra', and 'tooltip'
+     *
+     * @return String    The HTML for the input
+     */
     public static function form_helper_common($helperArgs=array())
     {
         return self::$form->form_helper_common($helperArgs);
@@ -202,13 +216,13 @@ class Form
 	 * @static
 	 *
 	 * @param string $value The displayed text of the label.
-	 * @param string $for   The tag to be applied to the 'for' part of the tag.
+	 * @param mixed  $options The value to be applied to the 'for' attribute of the tag, or an array of properties.
 	 *
 	 * @return string HTML for the field label
 	 */
-	public static function label($value, $for = NULL)
+	public static function label($value, $options=null)
 	{
-		return self::$form->label($value, $for);
+		return self::$form->label($value, $options);
 	}//end label()
 
 	//--------------------------------------------------------------------
@@ -220,12 +234,13 @@ class Form
 	 * @static
 	 *
 	 * @param array $options An array of options to be applied as attributes to the input. $options['type'] is required.
+	 * @param bool  $extended If true, return a templated input with label, help text, etc., else return just an input.
 	 *
 	 * @return string HTML for the input field
 	 */
-	public static function input($options)
+	public static function input($options, $extended=false)
 	{
-		return self::$form->input($options);
+		return self::$form->input($options, $extended);
 	}//end input()
 
 	//--------------------------------------------------------------------
@@ -237,12 +252,13 @@ class Form
 	 * @static
 	 *
 	 * @param array $options An array of options to be applied as attributes.
+	 * @param bool  $extended If true, return a templated textarea with label, help text, etc., else return just a textarea.
 	 *
 	 * @return string HTML for the textarea field
 	 */
-	public static function textarea($options)
+	public static function textarea($options, $extended=false)
 	{
-		return self::$form->textarea($options);
+		return self::$form->textarea($options, $extended);
 	}//end textarea()
 
 	//--------------------------------------------------------------------
@@ -254,12 +270,13 @@ class Form
 	 * @static
 	 *
 	 * @param array $options An array of options to be applied as attributes.
+	 * @param bool  $extended If true, return a templated state dropdown with label, help text, etc., else return just a state dropdown.
 	 *
 	 * @return string HTML for the State dropdown field
 	 */
-	public static function state($options)
+	public static function state($options, $extended=false)
 	{
-        return self::$form->state($options);
+        return self::$form->state($options, $extended);
 	}//end state()
 
 	//--------------------------------------------------------------------

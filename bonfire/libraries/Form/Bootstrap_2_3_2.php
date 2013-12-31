@@ -82,7 +82,7 @@ class Bootstrap_2_3_2 extends Form
 	{
 		self::$ci =& get_instance();
 
-        log_message('debug', 'Bootstrap 2.3.2 class initialized');
+        log_message('debug', 'Form Driver (Bootstrap 2.3.2) initialized');
 	}
 
 	/**
@@ -101,62 +101,11 @@ class Bootstrap_2_3_2 extends Form
 		if ( ! isset($properties['name'])) {
 			$properties['name'] = $name;
 		}
-
-		$error_class = '';
-		$error  = '';
-		$help   = '';
-		$input	= '';
-
-        if (function_exists('form_error')) {
-            if (form_error($properties['name'])) {
-                $error_class = ' error';
-                $help .= form_error($properties['name']) . '<br />';
-            }
+        if (isset($properties['help'])) {
+            $properties['tooltip'] = $properties['help'];
         }
 
-		if (isset($properties['help'])) {
-			$help .= $properties['help'];
-			unset($properties['help']);
-		}
-
-		switch ($properties['type']) {
-/*
-			case 'hidden':
-				break;
-
-			case 'radio':
-			case 'checkbox':
-				break;
-
-			case 'select':
-				break;
-
-			case 'textarea':
-				break;
- */
-			case 'state':
-				$input = self::state($properties);
-				break;
-
-			default:
-				$input = self::input($properties);
-				break;
-		}
-
-        $search = array(
-            '{label}',
-            '{input}',
-            '{help}',
-            '{error_class}',
-        );
-        $replace = array(
-            self::label($properties['label']),
-            $input,
-            $help,
-            $error_class,
-        );
-
-		return str_replace($search, $replace, self::$template);
+        return self::buildControl($properties);
 	}
 
     /**
@@ -168,58 +117,7 @@ class Bootstrap_2_3_2 extends Form
      */
     public static function form_helper_common($helperArgs=array())
     {
-        $type       = isset($helperArgs['type']) ? $helperArgs['type'] : 'text';
-        $data       = isset($helperArgs['data']) ? $helperArgs['data'] : '';
-        $value      = isset($helperArgs['value']) ? $helperArgs['value'] : '';
-        $label      = isset($helperArgs['label']) ? $helperArgs['label'] : '';
-        $extra      = isset($helperArgs['extra']) ? $helperArgs['extra'] : '';
-        $tooltip    = isset($helperArgs['tooltip']) ? $helperArgs['tooltip'] : '';
-
-        $defaults = array('type' => $type, 'name' => (( ! is_array($data)) ? $data : ''), 'value' => $value);
-
-		// If name is empty at this point, try to grab it from the $data array
-		if (empty($defaults['name']) && is_array($data) && isset($data['name'])) {
-			$defaults['name'] = $data['name'];
-			unset($data['name']);
-		}
-
-		// If label is empty at this point, try to grab it from the $data array
-		if (empty($label) && is_array($data) && isset($data['label'])) {
-			$label = $data['label'];
-			unset($data['label']);
-		}
-
-		// If tooltip is empty at this point, try to grab it from the $data array
-		if (empty($tooltip) && is_array($data) && isset($data['tooltip'])) {
-			$tooltip = $data['tooltip'];
-			unset($data['tooltip']);
-		}
-
-		$error = '';
-
-		if (function_exists('form_error')) {
-			if (form_error($defaults['name'])) {
-				$error   = ' error';
-				$tooltip = form_error($data['name']) . '<br />' . $tooltip;
-			}
-		}
-
-		$output = _parse_form_attributes($data, $defaults);
-
-        $search = array(
-            '{label}',
-            '{input}',
-            '{help}',
-            '{error_class}',
-        );
-        $replace = array(
-            self::label($label, array('for' => $defaults['name'], 'class' => 'control-label')),
-            "<input {$output} {$extra} />",
-            $tooltip,
-            $error,
-        );
-
-		return str_replace($search, $replace, self::$template);
+        return self::buildControl($helperArgs);
     }
 
     /**
@@ -231,77 +129,9 @@ class Bootstrap_2_3_2 extends Form
      */
     public static function form_helper_dropdown($helperArgs)
     {
-        $data       = isset($helperArgs['data']) ? $helperArgs['data'] : $helperArgs;
-        $options    = isset($helperArgs['options']) ? $helperArgs['options'] : array();
-        $selected   = isset($helperArgs['selected']) ? $helperArgs['selected'] : array();
-        $label      = isset($helperArgs['label']) ? $helperArgs['label'] : '';
-        $extra      = isset($helperArgs['extra']) ? $helperArgs['extra'] : '';
-        $tooltip    = isset($helperArgs['tooptip']) ? $helperArgs['tooptip'] : '';
+        $helperArgs['type'] = 'select';
 
-		if ( ! is_array($data)) {
-			$data = array('name' => $data);
-		}
-
-		if ( ! isset($data['id'])) {
-			$data['id'] = $data['name'];
-		}
-
-		$output = _parse_form_attributes($data, array());
-
-		if ( ! is_array($selected)) {
-			$selected = array($selected);
-		}
-
-		// If no selected state was submitted we will attempt to set it automatically
-		if (count($selected) === 0) {
-			// If the form name appears in the $_POST array we have a winner!
-			if (isset($_POST[$data['name']])) {
-				$selected = array($_POST[$data['name']]);
-			}
-		}
-
-		$options_vals = '';
-		foreach ($options as $key => $val) {
-			$key = (string) $key;
-
-			if (is_array($val) && ! empty($val)) {
-				$options_vals .= "<optgroup label='{$key}'>" . PHP_EOL;
-
-				foreach ($val as $optgroup_key => $optgroup_val) {
-					$sel = (in_array($optgroup_key, $selected)) ? ' selected="selected"' : '';
-					$options_vals .= "<option value='{$optgroup_key}'{$sel}>{$optgroup_val}</option>" . PHP_EOL;
-				}
-
-				$options_vals .= '</optgroup>' . PHP_EOL;
-			} else {
-				$sel = (in_array($key, $selected)) ? ' selected="selected"' : '';
-				$options_vals .= "<option value='{$key}'{$sel}>{$val}</option>" . PHP_EOL;
-			}
-		}
-
-		$error = '';
-
-		if (function_exists('form_error')) {
-			if (form_error($data['name'])) {
-				$error   = ' error';
-				$tooltip = form_error($data['name']) . '<br />' . $tooltip;
-			}
-		}
-
-        $search = array(
-            '{label}',
-            '{input}',
-            '{help}',
-            '{error_class}',
-        );
-        $replace = array(
-            self::label($label, array('for' => $data['id'], 'class' => 'control-label')),
-            "<select {$output} {$extra}>{$options_vals}</select>",
-            $tooltip,
-            $error,
-        );
-
-		return str_replace($search, $replace, self::$template);
+        return self::buildControl($helperArgs);
     }
 
 	/**
@@ -318,7 +148,7 @@ class Bootstrap_2_3_2 extends Form
 	public static function input($options, $extended=false)
 	{
         if ($extended) {
-            return self::form_helper_common($options);
+            return self::buildControl($options);
         }
 
 		if ( ! isset($options['type'])) {
@@ -327,9 +157,17 @@ class Bootstrap_2_3_2 extends Form
 			logit(sprintf('"%s" is not a valid input type.', $options['type']));
 		}
 
-		$input = '<input ' . self::attr_to_string($options) . ' />';
+        $settings = array(
+            'data'  => $options,
+            'extra' => '',
+        );
 
-		return $input;
+        if (isset($options['extra'])) {
+            $settings['extra'] = $options['extra'];
+            unset($settings['data']['extra']);
+        }
+
+        return self::buildInput($settings);
 	}
 
     /**
@@ -339,21 +177,28 @@ class Bootstrap_2_3_2 extends Form
 	 * @static
 	 *
 	 * @param string $value   The displayed text of the label.
-	 * @param mixed  $options The value to be applied to the 'for' attribute of the tag, or an array of properties.
+	 * @param mixed  $options An array of attributes, or the value to be applied to the 'for' attribute of the label.
 	 *
 	 * @return string HTML for the field label
 	 */
 	public static function label($value, $options=null)
 	{
-		if ($options === null) {
-			return "<label>{$value}</label>";
-		}
-
         if (is_string($options)) {
-            return "<label for='{$options}'>{$value}</label>";
+            $options = array('for' => $options);
         }
 
-        return '<label ' . self::attr_to_string($options) . ">{$value}</label>";
+        // This check is after is_string() because some string values are
+        // considered empty, but may be valid labels
+        if (empty($options)) {
+            $options = array();
+        }
+
+        $settings = array(
+            'value'         => $value,
+            'attributes'    => $options,
+        );
+
+        return self::buildLabel($settings);
 	}
 
 	/**
@@ -369,47 +214,16 @@ class Bootstrap_2_3_2 extends Form
 	 */
 	public static function state($options, $extended=false)
 	{
-		if ( ! function_exists('state_select')) {
-			self::$ci->load->helper('address');
-		}
+        if ($extended) {
+            $options['type'] = 'state';
 
-		$selected	= isset($options['value']) ? $options['value'] : '';
-		$default	= isset($options['default']) ? $options['default'] : '';
-		$country	= 'US';
-		$name		= isset($options['name']) ? $options['name'] : '';
-		$class		= isset($options['class']) ? $options['class'] : '';
-
-		$input = state_select($selected, $default, $country, $name, $class);
-
-        if ($extended !== true) {
-            return $input;
+            return self::buildControl($options);
         }
 
-        $tooltip = isset($options['tooltip']) ? $options['tooltip'] : '';
-        $label = isset($options['label']) ? $options['label'] : '';
-        $error = '';
+		$options['name']    = isset($options['name']) ? $options['name'] : '';
+		$options['value']   = isset($options['value']) ? $options['value'] : '';
 
-        if ( ! empty($name) && function_exists('form_error')) {
-            if (form_error($name)) {
-                $error = ' error';
-                $tooltip = form_error($name) . '<br />' . $tooltip;
-            }
-        }
-
-        $search = array(
-            '{label}',
-            '{input}',
-            '{help}',
-            '{error_class}',
-        );
-        $replace = array(
-            self::label($label, array('for' => $name, 'class' => 'control-label')),
-            $input,
-            $tooltip,
-            $error,
-        );
-
-		return str_replace($search, $replace, self::$template);
+        return self::buildStateSelect($options);
 	}
 
 	/**
@@ -425,65 +239,275 @@ class Bootstrap_2_3_2 extends Form
 	 */
 	public static function textarea($options, $extended=false)
 	{
-        $label      = '';
-        $tooltip    = '';
-		$value      = '';
+        if ($extended) {
+            $options['type'] = 'textarea';
 
-		if (isset($options['value'])) {
-			$value = $options['value'];
-			unset($options['value']);
-		}
-
-        // We want to unset label and tooltip before creating the textarea,
-        // though they should only be set if $extended is true
-        if (isset($options['label'])) {
-            $label = $options['label'];
-            unset($options['label']);
+            return self::buildControl($options);
         }
 
-        if (isset($options['tooltip'])) {
-            $tooltip = $options['tooltip'];
-            unset($options['tooltip']);
+        $settings = array(
+            'data'  => $options,
+            'extra' => '',
+        );
+
+        if (isset($options['extra'])) {
+            $settings['extra'] = $options['extra'];
+            unset($settings['data']['extra']);
         }
 
-		$input = '<textarea ' . self::attr_to_string($options) . '>';
-		$input .= self::prep_value($value);
-		$input .= '</textarea>';
+        return self::buildTextarea($settings);
+	}
 
-        if ($extended !== true) {
-            return $input;
-        }
+    /**
+     * Build a form control, complete with label, help/error text, etc.
+     *
+     * @param Array $options The settings used to build the control, generally handles the inputs passed to BF_form_helper's functions
+     *
+     * @return String    The HTML to display the control
+     */
+    protected static function buildControl($options)
+    {
+        $settings = array(
+            'data'      => '',
+            'extra'     => '',
+            'label'     => '',
+            'name'      => '',
+            'tooltip'   => '',
+            'type'      => 'text',
+            'value'     => '',
+        );
 
-        $error      = '';
-        $name       = '';
-
-        if (isset($options['name'])) {
-            $name = $options['name'];
-        } elseif (isset($options['id'])) {
-            $name = $options['id'];
-        }
-
-        if ( ! empty($name) && function_exists('form_error')) {
-            if (form_error($name)) {
-                $error = ' error';
-                $tooltip = form_error($name) . '<br />' . $tooltip;
+        // Make sure we don't overwrite a default value with empty data
+        foreach ($settings as $key => $val) {
+            if (isset($options[$key]) && empty($options[$key])) {
+                unset($options[$key]);
             }
         }
 
-        $search = array(
-            '{label}',
-            '{input}',
-            '{help}',
-            '{error_class}',
+        $settings = array_merge($settings, $options);
+
+        /*
+         * If $settings['data'] is not an array, it should be a string
+         * containing the name of the control, so we turn it into an array and
+         * assign its value to the 'name' key.
+         */
+        if ( ! is_array($settings['data'])) {
+            $settings['data'] = array('name' => $settings['data']);
+        }
+
+        /*
+         * If $settings['extra'], $settings['label'], $settings['name'], or
+         * $settings['tooltip'] is empty, try to retrieve the value(s) from
+         * $settings['data']
+         */
+        if (empty($settings['extra']) && isset($settings['data']['extra'])) {
+            $settings['extra'] = $settings['data']['extra'];
+            unset($settings['data']['extra']);
+        }
+
+        if (empty($settings['label']) && isset($settings['data']['label'])) {
+            $settings['label'] = $settings['data']['label'];
+            unset($settings['data']['label']);
+        }
+
+        if (empty($settings['name']) && isset($settings['data']['name'])) {
+            $settings['name'] = $settings['data']['name'];
+            // We don't unset the name, because it is required for form fields
+        }
+
+        if (empty($settings['tooltip']) && isset($settings['data']['tooltip'])) {
+            $settings['tooltip'] = $settings['data']['tooltip'];
+            unset($settings['data']['tooltip']);
+        }
+
+        if ($settings['name'] != $settings['data']['name']) {
+            $settings['data']['name'] = $settings['name'];
+        }
+
+        /*
+         * If there is an error message, add it to the tooltip
+         */
+        $error = '';
+        if (function_exists('form_error')) {
+            if (form_error($settings['name'])) {
+                $error = ' error';
+                $settings['tooltip'] = form_error($settings['name']) . '<br />' . $settings['tooltip'];
+            }
+        }
+
+        /*
+         * We may want to change the label attributes (or value) for some
+         * controls
+         */
+        $label = array(
+            'value' => $settings['label'],
+            'attributes' => array(
+                'class' => 'control-label',
+            ),
         );
+
+        // Build the control itself based on the value of $settings['type']
+        $input = '';
+        switch ($settings['type']) {
+            case 'dropdown':
+            case 'select':
+                $input = self::buildSelect($settings);
+                break;
+
+            case 'textarea':
+                $input = self::buildTextarea($settings);
+                break;
+
+            case 'state':
+                $input = self::buildStateSelect($settings);
+                break;
+
+            default:
+                $input = self::buildInput($settings);
+                break;
+        }
+
+        /*
+         * A label's for attribute should always be set to the id value of the
+         * control, so if we don't have an id, we don't set the for attribute
+         */
+        if ( ! empty($settings['id'])) {
+            $label['attributes']['for'] = $settings['id'];
+        }
+        if (empty($label['attributes']['for']) && ! empty($settings['data']['id'])) {
+            $label['attributes']['for'] = $settings['data']['id'];
+        }
+
+        /*
+         * Finally, build the label and replace the placeholders in the template
+         */
+        $search = array('{label}', '{input}', '{help}', '{error_class}');
         $replace = array(
-            self::label($label, array('for' => $name, 'class' => 'control-label')),
+            self::buildLabel($label),
             $input,
-            $tooltip,
+            $settings['tooltip'],
             $error,
         );
 
 		return str_replace($search, $replace, self::$template);
-	}
+    }
+
+    /**
+     * Build an HTML input control
+     *
+     * @param Array $settings The settings used to build the control
+     *
+     * @return String    The HTML input
+     */
+    protected static function buildInput($settings)
+    {
+        $input = '<input ' . self::attr_to_string($settings['data']) . " {$settings['extra']} />";
+
+        return $input;
+    }
+
+    /**
+     * Build an HTML label
+     *
+     * @param Array $settings The settings used to build the label (String 'value' and Array 'attributes')
+     *
+     * @return String    The HTML label
+     */
+    protected static function buildLabel($settings)
+    {
+        $value = isset($settings['value']) ? $settings['value'] : '';
+
+        if (empty($settings['attributes'])) {
+            return "<label>{$value}</label>";
+        }
+
+        return '<label ' . self::attr_to_string($settings['attributes']) . ">{$value}</label>";
+    }
+
+    /**
+     * Build an HTML select (dropdown) control
+     *
+     * @param Array $settings The settings used to build the control
+     *
+     * @return String    The HTML select
+     */
+    protected static function buildSelect($settings)
+    {
+        $selected = isset($settings['selected']) ? $settings['selected'] : array();
+        $options = isset($settings['options']) ? $settings['options'] : array();
+
+        if ( ! is_array($selected)) {
+            $selected = array($selected);
+        }
+        // If no selection was submitted, attempt to find it
+        if (count($selected) === 0) {
+            // If the field name appears in the $_POST array we have it
+            if (isset($_POST[$settings['name']])) {
+                $selected = array($_POST[$settings['name']]);
+            }
+        }
+
+        $options_vals = '';
+        foreach ($options as $key => $val) {
+            $key = (string) $key;
+
+            if (is_array($val) && ! empty($val)) {
+                $options_vals .= "<optgroup label='{$key}'>" . PHP_EOL;
+
+                foreach ($val as $optgroup_key => $optgroup_val) {
+                    $sel = (in_array($optgroup_key, $selected)) ? ' selected="selected"' : '';
+                    $options_vals .= "<option value='{$optgroup_key}'{$sel}>{$optgroup_val}</option>" . PHP_EOL;
+                }
+
+                $options_vals .= '</optgroup>' . PHP_EOL;
+            } else {
+                $sel = (in_array($key, $selected)) ? ' selected="selected"' : '';
+                $options_vals .= "<option value='{$key}'{$sel}>{$val}</option>" . PHP_EOL;
+            }
+        }
+
+        $input = '<select ' . self::attr_to_string($settings['data']) . " {$settings['extra']}>{$options_vals}</select>";
+
+        return $input;
+    }
+
+    /**
+     * Build a State Select control
+     *
+     * @param Array $settings The settings used to build the control
+     *
+     * @return String    The HTML for the state select
+     */
+    protected static function buildStateSelect($settings)
+    {
+        if ( ! function_exists('state_select')) {
+            self::$ci->load->helper('address');
+        }
+
+        $defaultCountry = 'US';
+        $defaultState   = isset($settings['default']) ? $settings['default'] : '';
+        $stateClass     = isset($settings['class']) ? $settings['class'] : '';
+
+        return state_select($settings['value'], $defaultState, $defaultCountry, $settings['name'], $stateClass);
+    }
+
+    /**
+     * Build an HTML textarea control
+     *
+     * @param Array $settings The settings used to build the control
+     *
+     * @return String    The HTML for the textarea
+     */
+    protected static function buildTextarea($settings)
+    {
+        $value = $settings['value'] || $settings['data']['value'];
+        unset($settings['value'], $settings['data']['value']);
+
+        $input = '<textarea ' . self::attr_to_string($settings['data']) . " {$settings['extra']}>";
+        $input .= self::prep_value($value);
+        $input .= '</textarea>';
+
+        return $input;
+    }
 }
 /* End of file: /bonfire/libraries/Form/Bootstrap_2_3_2.php */

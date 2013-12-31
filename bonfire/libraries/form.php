@@ -314,28 +314,22 @@ class Form
 	 */
 	protected static function attr_to_string($attr)
 	{
-		$attr_str = '';
-
-		if ( ! is_array($attr))
-		{
-			$attr = (array) $attr;
+		if ( ! is_array($attr)) {
+			return '';
 		}
 
-		foreach ($attr as $property => $value)
-		{
-			if ($property == 'label')
-			{
+        $attributes = array();
+		foreach ($attr as $property => $value) {
+			if ($property == 'label') {
 				continue;
 			}
-			if ($property == 'value')
-			{
+			if ($property == 'value') {
 				$value = self::prep_value($value);
 			}
-			$attr_str .= $property . '="' . $value . '" ';
+            $attributes[] = "{$property}='{$value}'";
 		}
 
-		// We strip off the last space for return
-		return substr($attr_str, 0, -1);
+		return implode(' ', $attributes);
 
 	}//end attr_to_string()
 
